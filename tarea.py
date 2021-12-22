@@ -6,12 +6,15 @@ import numpyro.distributions as dist
 
 def model(x, y=None):
     teta = []
-    teta0 = dist.Normal(loc=np.zeros(3), scale=5*np.ones(3)).to_event(1)
-    teta.append(teta0)
-    teta1 = dist.Normal(loc=np.zeros(3), scale=5*np.ones(3)).to_event(1)
-    teta.append(teta1)
-    teta2 = dist.Normal(loc=np.zeros(3), scale=5*np.ones(3)).to_event(1)
-    teta.append(teta2)
+    teta00 = dist.Normal(loc=jnp.zeros(3), scale=5*jnp.ones(3)).to_event(1)
+    teta10 = numpyro.sample("teta00", teta00)
+    teta.append(teta10)
+    teta01 = dist.Normal(loc=jnp.zeros(3), scale=5*jnp.ones(3)).to_event(1)
+    teta11 = numpyro.sample("teta01", teta01)
+    teta.append(teta11)
+    teta02 = dist.Normal(loc=jnp.zeros(3), scale=5*jnp.ones(3)).to_event(1)
+    teta12 = numpyro.sample("teta02", teta02)
+    teta.append(teta12)
     print(teta)
     lamda = []
     for i in range(197):
@@ -47,3 +50,8 @@ def run_mcmc_nuts(partial_model, x, y, rng_key_):
     sampler.print_summary(prob=0.9)
     
     return sampler.get_samples()
+
+def rutina_teta():
+    teta00 = dist.Normal(loc=jnp.zeros(3), scale=5*jnp.ones(3)).to_event(1)
+    teta10 = numpyro.sample("teta00", teta00)
+    return teta10
