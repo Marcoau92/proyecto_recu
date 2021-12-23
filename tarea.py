@@ -3,38 +3,37 @@ import jax.numpy as jnp
 import jax.random as random
 import numpyro
 import numpyro.distributions as dist
-from decimal import Decimal
-import scipy
 
 def model(x, y=None):
-    s = rutina_teta0(y)
-    d = rutina_teta1(y)
-    f = rutina_teta2(y)
-    teta = np.array([s,d,f]).astype(np.float)
-    print(teta)
-    lamda = []
-    for i in range(197):
-        temp0 = 0
-        temp1 = 0
-        temp2 = 0
-        temp0 = teta[0] + x[i,0]
-        temp1 = teta[1] + x[i,1]
-        temp2 = teta[2] + x[i,2]
-        lamdai = np.exp(teta[0] + temp0 + temp1 + temp2)
-        lamda.append(lamdai)
+    #np.random.seed(1234)
+    s_eps = 5
+    s = rutina_theta0(y,s_eps)
+    #b_star, w_star, s_eps_star, N = 10, 2.5, 1., 10
+    #x1 = np.random.randn(N)
+    #y1 = b_star + w_star*x1 +  np.random.randn(N)*s_eps_star
+    d = rutina_theta1(y,s_eps)
+    f = rutina_theta2(y,s_eps)
+    g = rutina_theta3(y,s_eps)
+    theta = jnp.array([s,d,f,g]).astype(np.float)
     p = []
-    for k in range(197):
-        #aux0 = Decimal((lamda[k]**y[k]))
-        #aux1 = Decimal(np.math.factorial(y[k]))
-        #print(y[k])
-        #print(lamda[k])
-        #print(aux0)
-        #print(aux1)
-        #aux = aux0/aux1
-        #pk = Decimal(aux*jnp.exp(-lamda[k]))
-        
-        p.append(pk)
-    return p
+    
+    for i in range(197):
+        temp0 = theta[1] * x[i,0]
+        temp1 = theta[2] * x[i,1]
+        temp2 = theta[3] * x[i,2]
+        lamdai = jnp.exp(theta[0] + temp0 + temp1 + temp2)
+        p.append(lamdai)
+    lamda = jnp.array(p)
+    print(lamda.shape)
+    print(y.shape)
+    with numpyro.plate('datos', size=len(y)):
+        f = numpyro.deterministic('lamda', value=lamda)
+        print(f.shape)
+        #numpyro.sample('c', dist.Poisson(f), obs=y)
+        return f
+    #sam = numpyro.sample('y', dist.Poisson(lamda), obs=y)
+    #print(sam)
+    #return sam
 
 def run_mcmc_nuts(partial_model, x, y, rng_key_):
     """
@@ -50,21 +49,21 @@ def run_mcmc_nuts(partial_model, x, y, rng_key_):
                              num_samples=1000, num_warmup=100, thinning=1,
                              num_chains=3)
 
-    sampler.run(rng_key_, x, y)
+    sampler.run(rng_key_,x, y)
 
     sampler.print_summary(prob=0.9)
     
     return sampler.get_samples()
 
-def rutina_teta0(y):
-    teta00 = dist.Normal(loc=jnp.zeros(3), scale=5*jnp.ones(3)).to_event(1)
-    teta10 = numpyro.sample("teta00", dist.Poisson(teta00),obs= 1)
-    return teta10
-def rutina_teta1(y):
-    teta01 = dist.Normal(loc=jnp.zeros(3), scale=5*jnp.ones(3)).to_event(1)
-    teta11 = numpyro.sample("teta01", dist.Poisson(teta01),obs= 1)
-    return teta11
-def rutina_teta2(y):
-    teta02 = dist.Normal(loc=jnp.zeros(3), scale=5*jnp.ones(3)).to_event(1)
-    teta12 = numpyro.sample("teta02", dist.Poisson(teta02),obs= 1)
-    return teta12
+def rutina_theta0(y,s_eps):
+    theta00 = numpyro.sample('theta0',dist.Normal(loc=jnp.zeros(3), scale=s_eps*jnp.ones(3)),obs=1)
+    return theta00
+def rutina_theta1(y,s_eps):
+    theta01 = numpyro.sample('theta1',dist.Normal(loc=jnp.zeros(3), scale=s_eps*jnp.ones(3)),obs=1)
+    return theta01
+def rutina_theta2(y,s_eps):
+    theta02 = numpyro.sample('theta2',dist.Normal(loc=jnp.zeros(3), scale=s_eps*jnp.ones(3)),obs=1)
+    return theta02
+def rutina_theta3(y,s_eps):
+    theta03 = numpyro.sample('theta3',dist.Normal(loc=jnp.zeros(3), scale=s_eps*jnp.ones(3)),obs=1)
+    return theta03
