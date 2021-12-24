@@ -25,14 +25,14 @@ def run_mcmc_nuts(partial_model, x, y, rngkey):
     """
     sampler = numpyro.infer.MCMC(sampler=numpyro.infer.NUTS(partial_model), 
                              num_samples=1000, num_warmup=100, thinning=1,
-                             num_chains=2)
+                             num_chains=3)
     sampler.run(rngkey, x, y)
     sampler.print_summary(prob=0.9)
     return sampler
 def run_mcmc_BarkerMH(partial_model, x, y, rngkey):
     sampler = numpyro.infer.MCMC(sampler=numpyro.infer.BarkerMH(partial_model), 
-                             num_samples=1000, num_warmup=100, thinning=1,
-                             num_chains=20)
+                             num_samples=5000, num_warmup=100, thinning=1,
+                             num_chains=3)
     sampler.run(rngkey, x, y)
     sampler.print_summary(prob=0.9)
     return sampler
