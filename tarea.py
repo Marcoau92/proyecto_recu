@@ -3,11 +3,11 @@ import jax.numpy as jnp
 import jax.random as random
 import numpyro
 import numpyro.distributions as dist
-
+import random as random1
 def model(x, y=None):
     prior_dist = dist.Normal(loc=jnp.zeros(4), scale=5*jnp.ones(4)).to_event(1) 
     #theta = [rutina_theta0(x),rutina_theta1(x),rutina_theta2(x),rutina_theta3(x)]
-    theta = [0.5,0.2,0.3,0.7]
+    theta = [random1.random(),random1.random(),random1.random(),random1.random()]
     print(theta)
     #theta = numpyro.sample("theta", prior_dist)
     s_eps = numpyro.sample("s", dist.HalfCauchy(scale=5.0))
@@ -17,25 +17,25 @@ def model(x, y=None):
         numpyro.sample("y", dist.Poisson(f), obs=y)
         return f
 
-def run_mcmc_nuts(partial_model, x, y, rng_key_):
+def run_mcmc_nuts(partial_model, x, y, rngkey):
     """
     Implemente una función que calcula y retorna la traza de los parámetros del modelo. 
     Utilice el algoritmo de muestreo No U-turn (NUTS)
     Nota: Puede agregar argumentos a la función si lo necesita
     """
-    rng_key, rngkey = random.split(rng_key)
-
-    sampler = numpyro.infer.MCMC(sampler=numpyro.infer.NUTS(tarea.model), 
+    sampler = numpyro.infer.MCMC(sampler=numpyro.infer.NUTS(partial_model), 
                              num_samples=1000, num_warmup=100, thinning=1,
                              num_chains=2)
-
     sampler.run(rngkey, x, y)
-
-
-
     sampler.print_summary(prob=0.9)
-    
-    return sampler.get_samples()
+    return sampler
+def run_mcmc_BarkerMH(partial_model, x, y, rngkey):
+    sampler = numpyro.infer.MCMC(sampler=numpyro.infer.BarkerMH(partial_model), 
+                             num_samples=1000, num_warmup=100, thinning=1,
+                             num_chains=20)
+    sampler.run(rngkey, x, y)
+    sampler.print_summary(prob=0.9)
+    return sampler
 def rutina_theta0(x):
     theta = numpyro.sample('theta0',dist.Normal(loc=0, scale=5),obs=1)
     return theta
