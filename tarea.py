@@ -7,13 +7,19 @@ import random as random1
 def model(x, y=None):
     prior_dist = dist.Normal(loc=jnp.zeros(4), scale=5*jnp.ones(4)).to_event(1) 
     #theta = [rutina_theta0(x),rutina_theta1(x),rutina_theta2(x),rutina_theta3(x)]
-    theta = [random1.random(),random1.random(),random1.random(),random1.random()]
-    print(theta)
-    #theta = numpyro.sample("theta", prior_dist)
+    db_w = dist.Normal(loc=0, scale=5)
+    bw = numpyro.sample("bw", db_w)
+    db_x = dist.Normal(loc=0, scale=5)
+    bx = numpyro.sample("bx", db_x)
+    db_y = dist.Normal(loc=0, scale=5)
+    by = numpyro.sample("by", db_y)
+    db_z = dist.Normal(loc=0, scale=5)
+    bz = numpyro.sample("bz", db_z)
+    theta = [bw,bx,by,bz]
     s_eps = numpyro.sample("s", dist.HalfCauchy(scale=5.0))
     with numpyro.plate('datos', size=197):
         f = numpyro.deterministic('lambda',
-                            value=jnp.exp(theta[0] + theta[1]*x[0] + theta[2]*x[1] + theta[3]*x[2]))
+                            value=jnp.exp(theta[0] + jnp.dot(theta[1],x[0]) + jnp.dot(theta[2],x[1]) + jnp.dot(theta[3],x[2])))
         numpyro.sample("y", dist.Poisson(f), obs=y)
         return f
 
