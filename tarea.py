@@ -13,13 +13,9 @@ def model(x, y=None):
     theta2 = numpyro.sample("theta2", prior_dist)
     theta3 = numpyro.sample("theta3", prior_dist)
     theta = [theta0,theta1,theta2,theta3]
-    print(theta)
     x1 = x[0]
     x2 = x[1]
     x3 = x[2]
-    print(x1)
-    print(x2)
-    print(x3)
     with numpyro.plate('datos', size=197) as ind:
         f = numpyro.deterministic('lambda',
                             value=jnp.exp(theta[0] + jnp.dot(theta[1],x1) + jnp.dot(theta[2],x2) + jnp.dot(theta[3],x3)))
@@ -34,14 +30,14 @@ def run_mcmc_nuts(partial_model, x, y, rngkey):
     """
     sampler = numpyro.infer.MCMC(sampler=numpyro.infer.NUTS(partial_model), 
                              num_samples=1000, num_warmup=100, thinning=1,
-                             num_chains=3)
+                             num_chains=2)
     sampler.run(rngkey, x, y)
     sampler.print_summary(prob=0.9)
     return sampler
 def run_mcmc_BarkerMH(partial_model, x, y, rngkey):
     sampler = numpyro.infer.MCMC(sampler=numpyro.infer.BarkerMH(partial_model), 
                              num_samples=1000, num_warmup=100, thinning=1,
-                             num_chains=3)
+                             num_chains=2)
     sampler.run(rngkey, x, y)
     sampler.print_summary(prob=0.9)
     return sampler
@@ -86,10 +82,8 @@ def entropy(y):
     return -p * np.log(p + 1e-10)
 
 def plot_data(ax, x, y):
-    ax.scatter(x[y == 0, 0], x[y == 0, 1], c='k', marker='o')
-    ax.scatter(x[y == 1, 0], x[y == 1, 1], c='k', marker='x')
-    ax.set_xlabel('x[:, 0]')
-    ax.set_ylabel('x[:, 1]')
+    plt.scatter(x[y == 0, 0], x[y == 0, 1], c='k', marker='o')
+    plt.scatter(x[y == 1, 0], x[y == 1, 1], c='k', marker='x')
     
 def autocorrelation(trace):
     """
@@ -99,34 +93,6 @@ def autocorrelation(trace):
     rho = np.correlate(trace_norm, trace_norm, mode='full')
     return rho[len(rho) // 2:] / len(trace_norm)
 
-def trazas(model):
-    p=[]
-    theta0 = np.array(model['theta0'])
-    theta1 = np.array(model['theta1'])
-    theta2 = np.array(model['theta2'])
-    theta3 = np.array(model['theta3'])
-    fig, ax = plt.subplots(2, 2, figsize=(16, 8), tight_layout=True)   
-    fig.suptitle("Gráficas de Trazas")
-    for a in model:
-        if a == 'theta0':
-            ax[0,0].set_xlabel('Iteraciones')
-            ax[0,0].set_ylabel('Traza')
-            ax[0,0].set_title(a)
-            ax[0,0].plot(theta0)
-        elif a == 'theta1':
-            ax[0,1].set_xlabel('Iteraciones')
-            ax[0,1].set_ylabel('Traza')
-            ax[0,1].set_title(a)
-            ax[0,1].plot(theta1)
-        elif a == 'theta2':
-            ax[1,0].set_xlabel('Iteraciones')
-            ax[1,0].set_ylabel('Traza')
-            ax[1,0].set_title(a)
-            ax[1,0].plot(theta2)
-        elif a == 'theta3':
-            ax[1,1].set_xlabel('Iteraciones')
-            ax[1,1].set_ylabel('Traza')
-            ax[1,1].set_title(a)
-            ax[1,1].plot(theta3)
+
 
             
