@@ -4,22 +4,25 @@ import jax.random as random
 import numpyro
 import numpyro.distributions as dist
 import random as random1
+import matplotlib.pyplot as plt
+
 def model(x, y=None):
-    prior_dist = dist.Normal(loc=jnp.zeros(4), scale=5*jnp.ones(4)).to_event(1) 
-    #theta = [rutina_theta0(x),rutina_theta1(x),rutina_theta2(x),rutina_theta3(x)]
-    db_w = dist.Normal(loc=0, scale=5)
-    bw = numpyro.sample("bw", db_w)
-    db_x = dist.Normal(loc=0, scale=5)
-    bx = numpyro.sample("bx", db_x)
-    db_y = dist.Normal(loc=0, scale=5)
-    by = numpyro.sample("by", db_y)
-    db_z = dist.Normal(loc=0, scale=5)
-    bz = numpyro.sample("bz", db_z)
-    theta = [bw,bx,by,bz]
-    s_eps = numpyro.sample("s", dist.HalfCauchy(scale=5.0))
-    with numpyro.plate('datos', size=197):
+    prior_dist = dist.Normal(loc=0, scale=5)
+    theta0 = numpyro.sample("theta0", prior_dist)
+    theta1 = numpyro.sample("theta1", prior_dist)
+    theta2 = numpyro.sample("theta2", prior_dist)
+    theta3 = numpyro.sample("theta3", prior_dist)
+    theta = [theta0,theta1,theta2,theta3]
+    print(theta)
+    x1 = x[0]
+    x2 = x[1]
+    x3 = x[2]
+    print(x1)
+    print(x2)
+    print(x3)
+    with numpyro.plate('datos', size=197) as ind:
         f = numpyro.deterministic('lambda',
-                            value=jnp.exp(theta[0] + jnp.dot(theta[1],x[0]) + jnp.dot(theta[2],x[1]) + jnp.dot(theta[3],x[2])))
+                            value=jnp.exp(theta[0] + jnp.dot(theta[1],x1) + jnp.dot(theta[2],x2) + jnp.dot(theta[3],x3)))
         numpyro.sample("y", dist.Poisson(f), obs=y)
         return f
 
@@ -37,28 +40,11 @@ def run_mcmc_nuts(partial_model, x, y, rngkey):
     return sampler
 def run_mcmc_BarkerMH(partial_model, x, y, rngkey):
     sampler = numpyro.infer.MCMC(sampler=numpyro.infer.BarkerMH(partial_model), 
-                             num_samples=5000, num_warmup=100, thinning=1,
+                             num_samples=1000, num_warmup=100, thinning=1,
                              num_chains=3)
     sampler.run(rngkey, x, y)
     sampler.print_summary(prob=0.9)
     return sampler
-def rutina_theta0(x):
-    theta = numpyro.sample('theta0',dist.Normal(loc=0, scale=5),obs=1)
-    return theta
-def rutina_theta1(x):
-    theta01 = numpyro.sample('theta1',dist.Normal(loc=0, scale=5),obs=1)
-    return theta01
-def rutina_theta2(x):
-    theta02 = numpyro.sample('theta2',dist.Normal(loc=0, scale=5),obs=1)
-    return theta02
-def rutina_theta3(x):
-    theta03 = numpyro.sample('theta3',dist.Normal(loc=0, scale=5),obs=1)
-    return theta03
-def plot_data(ax, x, y):
-    ax.scatter(x[y == 0, 0], x[y == 0, 1], c='k', marker='o')
-    ax.scatter(x[y == 1, 0], x[y == 1, 1], c='k', marker='x')
-    ax.set_xlabel('x[:, 0]')
-    ax.set_ylabel('x[:, 1]')
     
 def get_predictive_samples(partial_model,
                            x_test,
@@ -112,3 +98,35 @@ def autocorrelation(trace):
     trace_norm = (trace - np.mean(trace)) / np.std(trace)
     rho = np.correlate(trace_norm, trace_norm, mode='full')
     return rho[len(rho) // 2:] / len(trace_norm)
+
+def trazas(model):
+    p=[]
+    theta0 = np.array(model['theta0'])
+    theta1 = np.array(model['theta1'])
+    theta2 = np.array(model['theta2'])
+    theta3 = np.array(model['theta3'])
+    fig, ax = plt.subplots(2, 2, figsize=(16, 8), tight_layout=True)   
+    fig.suptitle("Gráficas de Trazas")
+    for a in model:
+        if a == 'theta0':
+            ax[0,0].set_xlabel('Iteraciones')
+            ax[0,0].set_ylabel('Traza')
+            ax[0,0].set_title(a)
+            ax[0,0].plot(theta0)
+        elif a == 'theta1':
+            ax[0,1].set_xlabel('Iteraciones')
+            ax[0,1].set_ylabel('Traza')
+            ax[0,1].set_title(a)
+            ax[0,1].plot(theta1)
+        elif a == 'theta2':
+            ax[1,0].set_xlabel('Iteraciones')
+            ax[1,0].set_ylabel('Traza')
+            ax[1,0].set_title(a)
+            ax[1,0].plot(theta2)
+        elif a == 'theta3':
+            ax[1,1].set_xlabel('Iteraciones')
+            ax[1,1].set_ylabel('Traza')
+            ax[1,1].set_title(a)
+            ax[1,1].plot(theta3)
+
+            
