@@ -7,7 +7,7 @@ import random as random1
 import matplotlib.pyplot as plt
 
 def model(x, y=None):
-    prior_dist = dist.Normal(loc=0, scale=5)
+    prior_dist = dist.Normal(loc=0, scale=0.1)
     theta0 = numpyro.sample("theta0", prior_dist)
     theta1 = numpyro.sample("theta1", prior_dist)
     theta2 = numpyro.sample("theta2", prior_dist)
@@ -36,7 +36,7 @@ def run_mcmc_nuts(partial_model, x, y, rngkey):
     return sampler
 def run_mcmc_BarkerMH(partial_model, x, y, rngkey):
     sampler = numpyro.infer.MCMC(sampler=numpyro.infer.BarkerMH(partial_model), 
-                             num_samples=1000, num_warmup=100, thinning=1,
+                             num_samples=100000, num_warmup=100, thinning=1,
                              num_chains=2)
     sampler.run(rngkey, x, y)
     sampler.print_summary(prob=0.9)
